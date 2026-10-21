@@ -7,19 +7,39 @@ import './App.css';
 function App() {
   const [invoiceData, setInvoiceData] = useState({
     companyName: 'Tech Solutions Inc.',
+    companyDescription: 'Software Development Agency',
     yourName: 'Alex Smith',
     companyAddress: '123 Innovation Dr\nSilicon Valley, CA 94025',
     companyEmail: 'billing@techsolutions.com',
     clientName: 'Global Corp',
+    clientDescription: 'Enterprise Solutions Provider',
     clientAddress: '456 Enterprise Way\nNew York, NY 10001',
     date: new Date().toISOString().split('T')[0],
     dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     items: [
-      { description: 'Web Development Services', quantity: 40, price: 150 },
-      { description: 'Server Setup', quantity: 1, price: 500 },
+      { description: 'Web Development Services', quantity: 40, price: 150, tax: 0 },
+      { description: 'Server Setup', quantity: 1, price: 500, tax: 0 },
     ],
     currency: 'USD',
-    notes: 'Please pay within 30 days via bank transfer.'
+    headerColor: '#1e293b', // Default slate-800
+    totalAmountColor: '#2563eb', // Default primary blue
+    notes: 'Please pay within 30 days via bank transfer.',
+    showTaxColumn: true,
+    discount: 0,
+    discountType: 'percentage',
+    amountPaid: 0,
+    visibleFields: {
+      companyName: true,
+      companyDescription: true,
+      companyAddress: true,
+      companyEmail: true,
+      clientName: true,
+      clientDescription: true,
+      clientAddress: true,
+      date: true,
+      dueDate: true,
+      notes: true,
+    }
   });
 
   const handleItemChange = (index, field, value) => {
@@ -31,7 +51,7 @@ function App() {
   const addItem = () => {
     setInvoiceData({
       ...invoiceData,
-      items: [...invoiceData.items, { description: '', quantity: 1, price: 0 }]
+      items: [...invoiceData.items, { description: '', quantity: 1, price: 0, tax: 0 }]
     });
   };
 
