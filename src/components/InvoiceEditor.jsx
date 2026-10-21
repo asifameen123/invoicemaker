@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Pin, PenLine, Save, Lock, Unlock, RotateCcw } from 'lucide-react';
 import Input from './Input';
 
 export default function InvoiceEditor({
@@ -7,7 +7,14 @@ export default function InvoiceEditor({
     setInvoiceData,
     handleItemChange,
     addItem,
-    removeItem
+    removeItem,
+    companyMode,
+    onModeChange,
+    onSaveFixedCompany,
+    isCompanyLocked,
+    setIsCompanyLocked,
+    onClearCompany,
+    onRestoreFixedCompany,
 }) {
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -141,13 +148,152 @@ export default function InvoiceEditor({
             </div>
 
             <div className="section mb-8">
-                <h3 className="text-lg mb-4 font-semibold text-muted">Company Details</h3>
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-semibold text-muted">Company Details</h3>
+                    {companyMode === 'fixed' ? (
+                        <span className="badge badge-success text-xs">
+                            <Pin size={12} /> Fixed Company Active
+                        </span>
+                    ) : (
+                        <span className="badge badge-info text-xs">
+                            <PenLine size={12} /> Fill Every Time Active
+                        </span>
+                    )}
+                </div>
+
+                {/* Company Mode Selector Card */}
+                <div className="company-mode-card">
+                    <div className="company-mode-header">
+                        <span className="text-xs font-bold uppercase tracking-wider text-muted">
+                            Company Setup Option
+                        </span>
+                        {companyMode === 'fixed' && (
+                            <button
+                                type="button"
+                                onClick={() => setIsCompanyLocked(!isCompanyLocked)}
+                                className="btn btn-outline text-xs py-1 px-2.5 flex items-center gap-1.5"
+                                title={isCompanyLocked ? "Unlock to edit company fields" : "Lock fields to prevent accidental edits"}
+                            >
+                                {isCompanyLocked ? <Lock size={13} className="text-amber-600" /> : <Unlock size={13} className="text-slate-500" />}
+                                {isCompanyLocked ? 'Locked (Click to edit)' : 'Lock Details'}
+                            </button>
+                        )}
+                    </div>
+
+                    <div className="company-mode-tabs">
+                        <button
+                            type="button"
+                            className={`company-mode-tab ${companyMode === 'fixed' ? 'active' : ''}`}
+                            onClick={() => onModeChange('fixed')}
+                        >
+                            <Pin size={15} /> Fixed Company Name
+                        </button>
+                        <button
+                            type="button"
+                            className={`company-mode-tab ${companyMode === 'manual' ? 'active' : ''}`}
+                            onClick={() => onModeChange('manual')}
+                        >
+                            <PenLine size={15} /> Fill Every Time
+                        </button>
+                    </div>
+
+                    {companyMode === 'fixed' ? (
+                        <div className="company-mode-body">
+                            <p className="company-mode-description">
+                                📌 <strong>Fixed Mode:</strong> Company name & details are saved permanently. New invoices automatically retain this company information.
+                            </p>
+                            <div className="company-mode-actions">
+                                <button
+                                    type="button"
+                                    onClick={onSaveFixedCompany}
+                                    className="btn btn-primary text-xs py-1.5 px-3 flex items-center gap-1.5"
+                                >
+                                    <Save size={14} /> Save as Fixed Default
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={onRestoreFixedCompany}
+                                    className="btn btn-outline text-xs py-1.5 px-3 flex items-center gap-1.5"
+                                    title="Reload saved default company info"
+                                >
+                                    <RotateCcw size={14} /> Restore Saved
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="company-mode-body">
+                            <p className="company-mode-description">
+                                ✍️ <strong>Fill Every Time:</strong> You fill company details fresh for every invoice. Starting a new invoice will clear company fields for manual entry.
+                            </p>
+                            <div className="company-mode-actions">
+                                <button
+                                    type="button"
+                                    onClick={onClearCompany}
+                                    className="btn btn-outline text-xs py-1.5 px-3 flex items-center gap-1.5 text-danger"
+                                >
+                                    <RotateCcw size={14} /> Clear Company Fields
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {isCompanyLocked && companyMode === 'fixed' && (
+                    <div className="mb-3 p-2 bg-amber-50 border border-amber-200 rounded-md text-xs text-amber-800 flex items-center justify-between">
+                        <span className="flex items-center gap-1.5">
+                            <Lock size={13} /> Company details are locked. Click Unlock to make changes.
+                        </span>
+                        <button
+                            type="button"
+                            onClick={() => setIsCompanyLocked(false)}
+                            className="font-semibold underline hover:text-amber-900 cursor-pointer"
+                        >
+                            Unlock
+                        </button>
+                    </div>
+                )}
+
                 <div className="grid grid-cols-2 gap-4">
-                    <Input label="Company Name" name="companyName" value={invoiceData.companyName} onChange={handleChange} placeholder="Your Company" />
-                    <Input label="Tagline / Description" name="companyDescription" value={invoiceData.companyDescription || ''} onChange={handleChange} placeholder="e.g. Software Services" />
-                    <Input label="Your Name" name="yourName" value={invoiceData.yourName} onChange={handleChange} placeholder="John Doe" />
-                    <Input label="Address" name="companyAddress" value={invoiceData.companyAddress} onChange={handleChange} placeholder="123 Street" />
-                    <Input label="Email" name="companyEmail" value={invoiceData.companyEmail} onChange={handleChange} placeholder="you@example.com" />
+                    <Input 
+                        label="Company Name" 
+                        name="companyName" 
+                        value={invoiceData.companyName || ''} 
+                        onChange={handleChange} 
+                        placeholder="Your Company Name" 
+                        disabled={companyMode === 'fixed' && isCompanyLocked}
+                    />
+                    <Input 
+                        label="Tagline / Description" 
+                        name="companyDescription" 
+                        value={invoiceData.companyDescription || ''} 
+                        onChange={handleChange} 
+                        placeholder="e.g. Software Services" 
+                        disabled={companyMode === 'fixed' && isCompanyLocked}
+                    />
+                    <Input 
+                        label="Your Name" 
+                        name="yourName" 
+                        value={invoiceData.yourName || ''} 
+                        onChange={handleChange} 
+                        placeholder="John Doe" 
+                        disabled={companyMode === 'fixed' && isCompanyLocked}
+                    />
+                    <Input 
+                        label="Address" 
+                        name="companyAddress" 
+                        value={invoiceData.companyAddress || ''} 
+                        onChange={handleChange} 
+                        placeholder="123 Street" 
+                        disabled={companyMode === 'fixed' && isCompanyLocked}
+                    />
+                    <Input 
+                        label="Email" 
+                        name="companyEmail" 
+                        value={invoiceData.companyEmail || ''} 
+                        onChange={handleChange} 
+                        placeholder="you@example.com" 
+                        disabled={companyMode === 'fixed' && isCompanyLocked}
+                    />
                 </div>
             </div>
 

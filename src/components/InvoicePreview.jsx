@@ -50,20 +50,26 @@ export default function InvoicePreview({ invoiceData }) {
                 <div className="flex justify-between items-start mb-12">
                     <div>
                         <h1 className="text-4xl font-bold mb-2" style={{ color: invoiceData.headerColor || '#1e293b' }}>INVOICE</h1>
-                        <p className="text-gray-500">#{Math.floor(Math.random() * 10000)}</p>
+                        <p className="text-gray-500">#{invoiceData.invoiceNumber || '1001'}</p>
                     </div>
                     <div className="text-right">
                         {invoiceData.visibleFields?.companyName !== false && (
-                            <h2 className="text-xl font-bold text-slate-700">{invoiceData.companyName || 'Company Name'}</h2>
+                            <h2 className={`text-xl font-bold ${invoiceData.companyName ? 'text-slate-800' : 'text-slate-400 italic'}`}>
+                                {invoiceData.companyName || 'Company Name'}
+                            </h2>
                         )}
                         {invoiceData.visibleFields?.companyDescription !== false && invoiceData.companyDescription && (
                             <p className="text-sm text-slate-500 italic mb-1">{invoiceData.companyDescription}</p>
                         )}
                         {invoiceData.visibleFields?.companyAddress !== false && (
-                            <p className="text-gray-500 whitespace-pre-line">{invoiceData.companyAddress || 'Address'}</p>
+                            <p className={`whitespace-pre-line ${invoiceData.companyAddress ? 'text-gray-500' : 'text-gray-300 italic'}`}>
+                                {invoiceData.companyAddress || 'Company Address'}
+                            </p>
                         )}
                         {invoiceData.visibleFields?.companyEmail !== false && (
-                            <p className="text-gray-500">{invoiceData.companyEmail || 'email@example.com'}</p>
+                            <p className={invoiceData.companyEmail ? 'text-gray-500' : 'text-gray-300 italic'}>
+                                {invoiceData.companyEmail || 'billing@company.com'}
+                            </p>
                         )}
                     </div>
                 </div>
