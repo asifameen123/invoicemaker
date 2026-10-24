@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, Trash2, Pin, PenLine, Save, Lock, Unlock, RotateCcw } from 'lucide-react';
+import { Plus, Trash2, Pin, PenLine, Save, Lock, Unlock, RotateCcw, Eye } from 'lucide-react';
 import Input from './Input';
 
 export default function InvoiceEditor({
@@ -15,11 +15,45 @@ export default function InvoiceEditor({
     setIsCompanyLocked,
     onClearCompany,
     onRestoreFixedCompany,
+    onSwitchToPreview,
 }) {
     const handleChange = (e) => {
         const { name, value } = e.target;
         setInvoiceData(prev => ({ ...prev, [name]: value }));
     };
+
+    const formatCurrency = (amount) => {
+        const currency = invoiceData.currency || 'USD';
+        const localeMap = {
+            'USD': 'en-US',
+            'INR': 'en-IN',
+            'AED': 'en-AE',
+        };
+        const locale = localeMap[currency] || 'en-US';
+
+        return new Intl.NumberFormat(locale, {
+            style: 'currency',
+            currency: currency,
+        }).format(amount);
+    };
+
+    const subtotal = invoiceData.items.reduce((acc, item) => acc + (item.quantity * item.price), 0);
+    let discountAmount = 0;
+    if (invoiceData.discount > 0) {
+        if (invoiceData.discountType === 'percentage') {
+            discountAmount = subtotal * (invoiceData.discount / 100);
+        } else {
+            discountAmount = parseFloat(invoiceData.discount) || 0;
+        }
+    }
+    const subtotalAfterDiscount = subtotal - discountAmount;
+    let tax = 0;
+    if (invoiceData.showTaxColumn) {
+        tax = invoiceData.items.reduce((acc, item) => acc + (item.quantity * item.price * (item.tax || 0) / 100), 0);
+    }
+    const total = subtotalAfterDiscount + tax;
+    const amountPaid = parseFloat(invoiceData.amountPaid) || 0;
+    const balanceDue = total - amountPaid;
 
     return (
         <div className="card invoice-editor">
@@ -27,7 +61,7 @@ export default function InvoiceEditor({
 
             <div className="section mb-8">
                 <h3 className="text-lg mb-4 font-semibold text-muted">Invoice Settings</h3>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="flex flex-col gap-2">
                         <label className="text-sm font-medium text-gray-700">Currency</label>
                         <select
@@ -42,7 +76,7 @@ export default function InvoiceEditor({
                         </select>
                     </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4 mt-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                     <div className="flex flex-col gap-2">
                         <label className="text-sm font-medium text-gray-700">Header Color</label>
                         <div className="flex gap-2 items-center">
@@ -51,9 +85,9 @@ export default function InvoiceEditor({
                                 name="headerColor"
                                 value={invoiceData.headerColor || '#1e293b'}
                                 onChange={handleChange}
-                                className="h-10 w-20 p-1 border border-gray-300 rounded-md cursor-pointer"
+                                className="h-10 w-16 p-1 border border-gray-300 rounded-md cursor-pointer"
                             />
-                            <span className="text-sm text-gray-500">{invoiceData.headerColor || '#1e293b'}</span>
+                            <span className="text-sm text-gray-500 font-mono">{invoiceData.headerColor || '#1e293b'}</span>
                         </div>
                     </div>
                     <div className="flex flex-col gap-2">
@@ -64,13 +98,13 @@ export default function InvoiceEditor({
                                 name="totalAmountColor"
                                 value={invoiceData.totalAmountColor || '#2563eb'}
                                 onChange={handleChange}
-                                className="h-10 w-20 p-1 border border-gray-300 rounded-md cursor-pointer"
+                                className="h-10 w-16 p-1 border border-gray-300 rounded-md cursor-pointer"
                             />
-                            <span className="text-sm text-gray-500">{invoiceData.totalAmountColor || '#2563eb'}</span>
+                            <span className="text-sm text-gray-500 font-mono">{invoiceData.totalAmountColor || '#2563eb'}</span>
                         </div>
                     </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4 mt-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                     <div className="flex flex-col gap-2">
                         <label className="text-sm font-medium text-gray-700">Show Tax Column</label>
                         <div className="flex items-center gap-2 mt-2">
@@ -100,7 +134,7 @@ export default function InvoiceEditor({
                                 name="discountType"
                                 value={invoiceData.discountType}
                                 onChange={handleChange}
-                                className="p-2 border border-gray-300 rounded-md focus:outline-none"
+                                className="p-2 border border-gray-300 rounded-md focus:outline-none w-24"
                             >
                                 <option value="percentage">%</option>
                                 <option value="flat">Flat</option>
@@ -108,7 +142,7 @@ export default function InvoiceEditor({
                         </div>
                     </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4 mt-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                     <div className="flex flex-col gap-2">
                         <label className="text-sm font-medium text-gray-700">Amount Paid</label>
                         <div className="flex-1">
@@ -126,7 +160,7 @@ export default function InvoiceEditor({
 
             <div className="section mb-8">
                 <h3 className="text-lg mb-4 font-semibold text-muted">Field Visibility</h3>
-                <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                     {invoiceData.visibleFields && Object.keys(invoiceData.visibleFields).map(field => (
                         <div key={field} className="flex items-center gap-2 bg-slate-50 p-2 rounded-md border border-slate-200">
                             <input
@@ -141,7 +175,7 @@ export default function InvoiceEditor({
                                 }))}
                                 className="w-4 h-4 cursor-pointer text-primary rounded"
                             />
-                            <span className="text-sm text-gray-700 capitalize">{field.replace(/([A-Z])/g, ' $1').trim()}</span>
+                            <span className="text-xs sm:text-sm text-gray-700 capitalize">{field.replace(/([A-Z])/g, ' $1').trim()}</span>
                         </div>
                     ))}
                 </div>
@@ -253,7 +287,7 @@ export default function InvoiceEditor({
                     </div>
                 )}
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Input 
                         label="Company Name" 
                         name="companyName" 
@@ -299,7 +333,7 @@ export default function InvoiceEditor({
 
             <div className="section mb-8">
                 <h3 className="text-lg mb-4 font-semibold text-muted">Client Details</h3>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Input label="Client Name" name="clientName" value={invoiceData.clientName} onChange={handleChange} placeholder="Client Company" />
                     <Input label="Client Description" name="clientDescription" value={invoiceData.clientDescription || ''} onChange={handleChange} placeholder="e.g. Design Agency" />
                     <Input label="Client Address" name="clientAddress" value={invoiceData.clientAddress} onChange={handleChange} placeholder="456 Avenue" />
@@ -316,53 +350,121 @@ export default function InvoiceEditor({
                     </button>
                 </div>
 
-                <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-3">
                     {invoiceData.items.map((item, index) => (
-                        <div key={index} className="grid grid-cols-12 gap-2 items-end">
-                            <div className={invoiceData.showTaxColumn ? "col-span-5" : "col-span-6"}>
-                                <Input
-                                    placeholder="Description"
-                                    value={item.description}
-                                    onChange={(e) => handleItemChange(index, 'description', e.target.value)}
-                                />
-                            </div>
-                            <div className="col-span-2">
-                                <Input
-                                    type="number"
-                                    placeholder="Qty"
-                                    value={item.quantity}
-                                    onChange={(e) => handleItemChange(index, 'quantity', parseFloat(e.target.value) || 0)}
-                                />
-                            </div>
-                            <div className={invoiceData.showTaxColumn ? "col-span-2" : "col-span-3"}>
-                                <Input
-                                    type="number"
-                                    placeholder="Price"
-                                    value={item.price}
-                                    onChange={(e) => handleItemChange(index, 'price', parseFloat(e.target.value) || 0)}
-                                />
-                            </div>
-                            {invoiceData.showTaxColumn && (
-                                <div className="col-span-2">
-                                    <Input
-                                        type="number"
-                                        placeholder="Tax %"
-                                        value={item.tax}
-                                        onChange={(e) => handleItemChange(index, 'tax', parseFloat(e.target.value) || 0)}
-                                    />
-                                </div>
-                            )}
-                            <div className="col-span-1 flex justify-center">
+                        <div key={index} className="item-row-card">
+                            <div className="item-row-header-mobile sm:hidden">
+                                <span className="text-xs font-semibold text-slate-500">Item #{index + 1}</span>
                                 <button
+                                    type="button"
                                     onClick={() => removeItem(index)}
-                                    className="btn btn-danger p-2 rounded-md"
+                                    className="btn btn-danger text-xs py-1 px-2.5 rounded-md flex items-center gap-1"
                                     title="Remove Item"
                                 >
-                                    <Trash2 size={16} />
+                                    <Trash2 size={13} /> Remove
                                 </button>
+                            </div>
+
+                            <div className="grid grid-cols-12 gap-2 items-end">
+                                <div className={invoiceData.showTaxColumn ? "col-span-12 sm:col-span-5" : "col-span-12 sm:col-span-6"}>
+                                    <Input
+                                        label="Description"
+                                        placeholder="Item description"
+                                        value={item.description}
+                                        onChange={(e) => handleItemChange(index, 'description', e.target.value)}
+                                    />
+                                </div>
+                                <div className="col-span-4 sm:col-span-2">
+                                    <Input
+                                        type="number"
+                                        label="Qty"
+                                        placeholder="Qty"
+                                        value={item.quantity}
+                                        onChange={(e) => handleItemChange(index, 'quantity', parseFloat(e.target.value) || 0)}
+                                    />
+                                </div>
+                                <div className={invoiceData.showTaxColumn ? "col-span-4 sm:col-span-2" : "col-span-8 sm:col-span-5"}>
+                                    <Input
+                                        type="number"
+                                        label="Price"
+                                        placeholder="Price"
+                                        value={item.price}
+                                        onChange={(e) => handleItemChange(index, 'price', parseFloat(e.target.value) || 0)}
+                                    />
+                                </div>
+                                {invoiceData.showTaxColumn && (
+                                    <div className="col-span-4 sm:col-span-2">
+                                        <Input
+                                            type="number"
+                                            label="Tax %"
+                                            placeholder="Tax %"
+                                            value={item.tax}
+                                            onChange={(e) => handleItemChange(index, 'tax', parseFloat(e.target.value) || 0)}
+                                        />
+                                    </div>
+                                )}
+                                <div className="hidden sm:flex col-span-1 justify-center pb-1">
+                                    <button
+                                        type="button"
+                                        onClick={() => removeItem(index)}
+                                        className="btn btn-danger p-2 rounded-md"
+                                        title="Remove Item"
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     ))}
+                </div>
+
+                {/* Live Invoice Summary Card */}
+                <div className="editor-summary-card">
+                    <div className="flex items-center justify-between mb-3">
+                        <span className="font-bold text-slate-800 text-sm">Invoice Summary</span>
+                        <span className="text-xs text-muted">Auto-calculated</span>
+                    </div>
+                    <div className="flex flex-col gap-2 text-sm">
+                        <div className="flex justify-between text-slate-600">
+                            <span>Subtotal</span>
+                            <span className="font-semibold text-slate-800">{formatCurrency(subtotal)}</span>
+                        </div>
+                        {discountAmount > 0 && (
+                            <div className="flex justify-between text-emerald-600">
+                                <span>Discount {invoiceData.discountType === 'percentage' ? `(${invoiceData.discount}%)` : ''}</span>
+                                <span className="font-semibold">-{formatCurrency(discountAmount)}</span>
+                            </div>
+                        )}
+                        {invoiceData.showTaxColumn && tax > 0 && (
+                            <div className="flex justify-between text-slate-600">
+                                <span>Tax</span>
+                                <span className="font-semibold text-slate-800">{formatCurrency(tax)}</span>
+                            </div>
+                        )}
+                        <div className="flex justify-between items-center pt-2 border-t border-slate-200">
+                            <span className="font-bold text-slate-900 text-base">Total</span>
+                            <span className="font-bold text-xl" style={{ color: invoiceData.totalAmountColor || '#2563eb' }}>
+                                {formatCurrency(total)}
+                            </span>
+                        </div>
+                        {amountPaid > 0 && (
+                            <div className="flex justify-between text-slate-700 pt-1">
+                                <span>Balance Due</span>
+                                <span className="font-bold text-slate-900">{formatCurrency(balanceDue)}</span>
+                            </div>
+                        )}
+                    </div>
+                    {onSwitchToPreview && (
+                        <div className="mt-3 pt-3 border-t border-slate-200 lg:hidden">
+                            <button
+                                type="button"
+                                onClick={onSwitchToPreview}
+                                className="btn btn-primary w-full py-2.5 text-xs font-semibold flex items-center justify-center gap-2"
+                            >
+                                <Eye size={15} /> Switch to Live A4 Preview
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
 

@@ -1,6 +1,61 @@
 import React from 'react';
+import { Download, Printer, Loader2 } from 'lucide-react';
 
-export default function InvoicePreview({ invoiceData }) {
+export default function InvoicePreview({ invoiceData, previewRef, onDownloadPng, onPrint, isDownloadingPng, activeTab }) {
+    const containerRef = React.useRef(null);
+    const [scale, setScale] = React.useState(1);
+    const [pageHeight, setPageHeight] = React.useState(1123);
+    const [zoomMode, setZoomMode] = React.useState('fit'); // 'fit' | '100%'
+
+    const updateScale = React.useCallback(() => {
+        const container = containerRef.current;
+        if (!container) return;
+
+        let containerWidth = container.clientWidth;
+        if (containerWidth <= 0) {
+            const parent = container.parentElement;
+            containerWidth = (parent && parent.clientWidth > 0) ? parent.clientWidth : (window.innerWidth - 32);
+        }
+
+        const isMobile = window.innerWidth <= 640;
+        const padding = isMobile ? 12 : 48;
+        const availableWidth = Math.max(260, containerWidth - padding);
+        const A4_WIDTH = 794;
+
+        const pageEl = container.querySelector('#invoice-page-element');
+        if (pageEl) {
+            setPageHeight(pageEl.scrollHeight || 1123);
+        }
+
+        if (zoomMode === '100%') {
+            setScale(1);
+        } else if (availableWidth > 0 && availableWidth < A4_WIDTH) {
+            const s = Math.min(1, Math.max(0.2, availableWidth / A4_WIDTH));
+            setScale(s);
+        } else {
+            setScale(1);
+        }
+    }, [zoomMode]);
+
+    React.useEffect(() => {
+        updateScale();
+        const rafId = requestAnimationFrame(updateScale);
+        const timerId = setTimeout(updateScale, 50);
+
+        const ro = new ResizeObserver(() => {
+            updateScale();
+        });
+        if (containerRef.current) ro.observe(containerRef.current);
+        window.addEventListener('resize', updateScale);
+
+        return () => {
+            cancelAnimationFrame(rafId);
+            clearTimeout(timerId);
+            ro.disconnect();
+            window.removeEventListener('resize', updateScale);
+        };
+    }, [updateScale, activeTab, invoiceData]);
+
     const formatCurrency = (amount) => {
         const currency = invoiceData.currency || 'USD';
         const localeMap = {
@@ -43,8 +98,67 @@ export default function InvoicePreview({ invoiceData }) {
     const balanceDue = total - amountPaid;
 
     return (
-        <div className="invoice-preview-container bg-gray-500 p-8 rounded-xl overflow-auto flex justify-center no-print-bg">
-            <div className="invoice-page bg-white shadow-lg p-10 w-full max-w-[210mm] min-h-[297mm] flex flex-col relative text-sm">
+        <div className="preview-container-wrapper">
+            <div className="preview-toolbar no-print">
+                <div className="preview-toolbar-title flex items-center gap-2">
+                    <span className="font-semibold text-sm text-slate-200">A4 Preview</span>
+                    <span className="preview-live-badge">Live</span>
+                </div>
+                <div className="preview-toolbar-controls flex items-center gap-1.5">
+                    <button
+                        type="button"
+                        onClick={() => setZoomMode(prev => (prev === 'fit' ? '100%' : 'fit'))}
+                        className="btn btn-zoom text-xs py-1 px-2 rounded"
+                        title={zoomMode === 'fit' ? "Switch to 100% full scale" : "Auto-fit invoice to screen"}
+                    >
+                        {zoomMode === 'fit' ? '🔍 Fit' : '🔍 100%'}
+                    </button>
+                    {onDownloadPng && (
+                        <button
+                            type="button"
+                            onClick={onDownloadPng}
+                            disabled={isDownloadingPng}
+                            className="btn btn-secondary text-xs py-1 px-2 flex items-center gap-1"
+                            title="Download invoice as PNG image"
+                        >
+                            {isDownloadingPng ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
+                            <span>PNG</span>
+                        </button>
+                    )}
+                    {onPrint && (
+                        <button
+                            type="button"
+                            onClick={onPrint}
+                            className="btn btn-primary text-xs py-1 px-2 flex items-center gap-1"
+                            title="Print or save as PDF"
+                        >
+                            <Printer size={13} />
+                            <span>PDF</span>
+                        </button>
+                    )}
+                </div>
+            </div>
+
+            <div 
+                ref={containerRef}
+                className="invoice-preview-container no-print-bg"
+            >
+                <div 
+                    className="invoice-scale-wrapper"
+                    style={{
+                        width: scale < 1 ? `${Math.ceil(794 * scale)}px` : 'auto',
+                        height: scale < 1 ? `${Math.ceil(pageHeight * scale)}px` : 'auto',
+                    }}
+                >
+                    <div 
+                        ref={previewRef}
+                        id="invoice-page-element"
+                        className="invoice-page bg-white shadow-lg relative text-sm"
+                        style={{
+                            transform: scale < 1 ? `scale(${scale})` : 'none',
+                            transformOrigin: 'top left',
+                        }}
+                    >
 
                 {/* Header */}
                 <div className="flex justify-between items-start mb-12">
@@ -184,6 +298,8 @@ export default function InvoicePreview({ invoiceData }) {
                     </div>
                 )}
 
+            </div>
+                </div>
             </div>
         </div>
     );

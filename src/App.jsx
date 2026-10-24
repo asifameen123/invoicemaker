@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Printer, PlusCircle, Check, Pin, PenLine } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Printer, PlusCircle, Check, Pin, PenLine, Download, Loader2, AlertCircle } from 'lucide-react';
+import { toPng } from 'html-to-image';
 import InvoiceEditor from './components/InvoiceEditor';
 import InvoicePreview from './components/InvoicePreview';
 import './App.css';
@@ -13,6 +14,10 @@ const DEFAULT_COMPANY = {
 };
 
 function App() {
+  const invoiceRef = useRef(null);
+  const [isDownloadingPng, setIsDownloadingPng] = useState(false);
+  const [activeTab, setActiveTab] = useState('editor');
+
   // Mode: 'fixed' (keep company name for all invoices) vs 'manual' (fill every time)
   const [companyMode, setCompanyMode] = useState(() => {
     return localStorage.getItem('invoice_company_mode') || 'fixed';
@@ -59,7 +64,9 @@ function App() {
     if (savedComp) {
       try {
         comp = JSON.parse(savedComp);
-      } catch (e) {}
+      } catch {
+        // Fallback to default company
+      }
     }
 
     return {
@@ -238,36 +245,133 @@ function App() {
     window.print();
   };
 
+  const handleDownloadPng = async () => {
+    // If on mobile/tablet and in editor tab, switch to preview tab so the invoice element is rendered
+    if (activeTab === 'editor' && window.innerWidth < 1024) {
+      setActiveTab('preview');
+      await new Promise(resolve => setTimeout(resolve, 150));
+    }
+
+    const element = invoiceRef.current || document.getElementById('invoice-page-element');
+    if (!element) {
+      showToast('Could not find invoice preview element to capture.', 'danger');
+      return;
+    }
+
+    setIsDownloadingPng(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      let dataUrl;
+      const options = {
+        quality: 1.0,
+        pixelRatio: 2, // 2x resolution for sharp, professional PNG
+        backgroundColor: '#ffffff',
+        cacheBust: true,
+        style: {
+          boxShadow: 'none',
+          borderRadius: '0',
+          margin: '0',
+          transform: 'none',
+          width: '794px',
+          minWidth: '794px',
+        },
+      };
+
+      try {
+        dataUrl = await toPng(element, options);
+      } catch (fontErr) {
+        console.warn('Initial toPng failed, retrying with skipFonts...', fontErr);
+        dataUrl = await toPng(element, { ...options, skipFonts: true });
+      }
+
+      const link = document.createElement('a');
+      const safeInvoiceNumber = (invoiceData.invoiceNumber || 'invoice').replace(/[^a-zA-Z0-9_-]/g, '_');
+      link.download = `Invoice-${safeInvoiceNumber}.png`;
+      link.href = dataUrl;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      showToast('Invoice PNG downloaded successfully!', 'success');
+    } catch (error) {
+      console.error('Failed to generate PNG:', error);
+      showToast('Failed to download PNG. Please try again.', 'danger');
+    } finally {
+      setIsDownloadingPng(false);
+    }
+  };
+
   return (
     <div className="app-container">
       <header className="header no-print">
-        <div>
+        <div className="header-brand">
           <h1 className="text-2xl font-bold text-primary flex items-center gap-2">
             Invoice Maker Pro
           </h1>
           <p className="text-muted text-sm">Create beautiful invoices in seconds</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="header-actions">
           <button 
             type="button"
             onClick={handleNewInvoice} 
-            className="btn btn-outline flex items-center gap-2"
+            className="btn btn-outline"
             title="Start a new invoice"
           >
-            <PlusCircle size={18} /> New Invoice
+            <PlusCircle size={16} />
+            <span>+ New<span className="hidden sm:inline"> Invoice</span></span>
+          </button>
+          <button 
+            type="button"
+            onClick={handleDownloadPng} 
+            disabled={isDownloadingPng}
+            className="btn btn-secondary"
+            title="Download invoice as high-resolution PNG image"
+          >
+            {isDownloadingPng ? (
+              <>
+                <Loader2 size={16} className="animate-spin" />
+                <span><span className="hidden sm:inline">Generating </span>PNG...</span>
+              </>
+            ) : (
+              <>
+                <Download size={16} />
+                <span><span className="hidden sm:inline">Download </span>PNG</span>
+              </>
+            )}
           </button>
           <button 
             type="button"
             onClick={handlePrint} 
-            className="btn btn-primary flex items-center gap-2"
+            className="btn btn-primary"
+            title="Print or save invoice as PDF"
           >
-            <Printer size={18} /> Print / Save PDF
+            <Printer size={16} />
+            <span><span className="hidden sm:inline">Print / </span>PDF</span>
           </button>
         </div>
       </header>
 
+      {/* Mobile View Switcher (< 1024px) */}
+      <div className="mobile-view-tabs no-print">
+        <button
+          type="button"
+          onClick={() => setActiveTab('editor')}
+          className={`mobile-view-tab ${activeTab === 'editor' ? 'active' : ''}`}
+        >
+          <PenLine size={16} /> Edit Invoice
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('preview')}
+          className={`mobile-view-tab ${activeTab === 'preview' ? 'active' : ''}`}
+        >
+          <Printer size={16} /> Live Preview
+        </button>
+      </div>
+
       <div className="invoice-layout">
-        <div className="no-print">
+        <div className={`editor-wrapper no-print ${activeTab === 'preview' ? 'tab-pane-hidden' : ''}`}>
           <InvoiceEditor
             invoiceData={invoiceData}
             setInvoiceData={setInvoiceData}
@@ -281,11 +385,19 @@ function App() {
             setIsCompanyLocked={setIsCompanyLocked}
             onClearCompany={handleClearCompany}
             onRestoreFixedCompany={handleRestoreFixedCompany}
+            onSwitchToPreview={() => setActiveTab('preview')}
           />
         </div>
 
-        <div className="preview-wrapper">
-          <InvoicePreview invoiceData={invoiceData} />
+        <div className={`preview-wrapper ${activeTab === 'editor' ? 'tab-pane-hidden' : ''}`}>
+          <InvoicePreview 
+            invoiceData={invoiceData} 
+            previewRef={invoiceRef}
+            onDownloadPng={handleDownloadPng}
+            onPrint={handlePrint}
+            isDownloadingPng={isDownloadingPng}
+            activeTab={activeTab}
+          />
         </div>
       </div>
 
@@ -294,6 +406,7 @@ function App() {
           <div className={`toast toast-${toast.type || 'info'}`}>
             {toast.type === 'success' && <Check size={18} className="text-green-400" />}
             {toast.type === 'info' && <Pin size={18} className="text-blue-400" />}
+            {toast.type === 'danger' && <AlertCircle size={18} className="text-red-400" />}
             <span>{toast.message}</span>
           </div>
         </div>
