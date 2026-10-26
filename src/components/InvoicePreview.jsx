@@ -164,7 +164,13 @@ export default function InvoicePreview({ invoiceData, previewRef, onDownloadPng,
                 <div className="flex justify-between items-start mb-12">
                     <div>
                         <h1 className="text-4xl font-bold mb-2" style={{ color: invoiceData.headerColor || '#1e293b' }}>INVOICE</h1>
-                        <p className="text-gray-500">#{invoiceData.invoiceNumber || '1001'}</p>
+                        {invoiceData.visibleFields?.invoiceNumber !== false && (
+                            <p className="text-gray-500">
+                                {invoiceData.invoiceNumber
+                                    ? (invoiceData.invoiceNumber.startsWith('#') ? invoiceData.invoiceNumber : `#${invoiceData.invoiceNumber}`)
+                                    : '#1001'}
+                            </p>
+                        )}
                     </div>
                     <div className="text-right">
                         {invoiceData.visibleFields?.companyName !== false && (

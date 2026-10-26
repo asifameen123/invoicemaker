@@ -3,6 +3,7 @@ import { Plus, Trash2, Pin, PenLine, Save, Lock, Unlock, RotateCcw, Eye, EyeOff,
 import Input from './Input';
 
 const FIELD_LABELS = {
+    invoiceNumber: 'Invoice #',
     companyName: 'Company Name',
     companyDescription: 'Tagline',
     companyAddress: 'Address',
@@ -80,6 +81,26 @@ export default function InvoiceEditor({
             <div className="section mb-8">
                 <h3 className="text-lg mb-4 font-semibold text-muted">Invoice Settings</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <Input
+                        label="Invoice Number"
+                        name="invoiceNumber"
+                        value={invoiceData.invoiceNumber || ''}
+                        onChange={handleChange}
+                        placeholder="e.g. INV-1001"
+                        rightLabel={
+                            <button
+                                type="button"
+                                onClick={() => setInvoiceData(prev => ({
+                                    ...prev,
+                                    invoiceNumber: `INV-${Math.floor(1000 + Math.random() * 9000)}`
+                                }))}
+                                className="text-xs text-primary hover:underline font-semibold cursor-pointer"
+                                title="Auto-generate a new random invoice number"
+                            >
+                                🎲 Auto-Generate
+                            </button>
+                        }
+                    />
                     <div className="flex flex-col gap-2">
                         <label className="text-sm font-medium text-gray-700">Currency</label>
                         <select

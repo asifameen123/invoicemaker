@@ -133,6 +133,7 @@ function App() {
       discountType: 'percentage',
       amountPaid: 0,
       visibleFields: {
+        invoiceNumber: true,
         companyName: true,
         companyDescription: true,
         companyAddress: true,
@@ -333,6 +334,7 @@ function App() {
         notes: compSource.notes || 'Please pay within 30 days via bank transfer.',
         showTaxColumn: true,
         visibleFields: {
+          invoiceNumber: true,
           companyName: true,
           companyDescription: true,
           companyAddress: true,
@@ -372,6 +374,7 @@ function App() {
         notes: 'Please pay within 30 days via bank transfer.',
         showTaxColumn: true,
         visibleFields: {
+          invoiceNumber: true,
           companyName: true,
           companyDescription: true,
           companyAddress: true,
