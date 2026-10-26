@@ -185,6 +185,11 @@ export default function InvoicePreview({ invoiceData, previewRef, onDownloadPng,
                                 {invoiceData.companyEmail || 'billing@company.com'}
                             </p>
                         )}
+                        {(invoiceData.contactNumber || invoiceData.yourName) && (
+                            <p className="text-gray-500">
+                                {invoiceData.contactNumber || invoiceData.yourName}
+                            </p>
+                        )}
                     </div>
                 </div>
 

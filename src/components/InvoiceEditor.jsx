@@ -1,6 +1,19 @@
-import React from 'react';
-import { Plus, Trash2, Pin, PenLine, Save, Lock, Unlock, RotateCcw, Eye } from 'lucide-react';
+import React, { useState } from 'react';
+import { Plus, Trash2, Pin, PenLine, Save, Lock, Unlock, RotateCcw, Eye, EyeOff, Building2, ChevronDown, ChevronUp, Check } from 'lucide-react';
 import Input from './Input';
+
+const FIELD_LABELS = {
+    companyName: 'Company Name',
+    companyDescription: 'Tagline',
+    companyAddress: 'Address',
+    companyEmail: 'Email',
+    clientName: 'Client Name',
+    clientDescription: 'Client Tagline',
+    clientAddress: 'Client Address',
+    date: 'Date',
+    dueDate: 'Due Date',
+    notes: 'Notes & Terms',
+};
 
 export default function InvoiceEditor({
     invoiceData,
@@ -16,7 +29,12 @@ export default function InvoiceEditor({
     onClearCompany,
     onRestoreFixedCompany,
     onSwitchToPreview,
+    onOpenProfileSettings,
+    isUserLoggedIn,
 }) {
+    const [isVisibilityOpen, setIsVisibilityOpen] = useState(false);
+    const [isCompanyOpen, setIsCompanyOpen] = useState(false);
+
     const handleChange = (e) => {
         const { name, value } = e.target;
         setInvoiceData(prev => ({ ...prev, [name]: value }));
@@ -76,31 +94,32 @@ export default function InvoiceEditor({
                         </select>
                     </div>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-                    <div className="flex flex-col gap-2">
-                        <label className="text-sm font-medium text-gray-700">Header Color</label>
-                        <div className="flex gap-2 items-center">
+                {/* Colors side-by-side on one single line */}
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                    <div className="color-setting-card">
+                        <label className="color-setting-label">Header Color</label>
+                        <div className="color-setting-control">
                             <input
                                 type="color"
                                 name="headerColor"
                                 value={invoiceData.headerColor || '#1e293b'}
                                 onChange={handleChange}
-                                className="h-10 w-16 p-1 border border-gray-300 rounded-md cursor-pointer"
+                                className="color-setting-input"
                             />
-                            <span className="text-sm text-gray-500 font-mono">{invoiceData.headerColor || '#1e293b'}</span>
+                            <span className="color-setting-hex">{invoiceData.headerColor || '#1e293b'}</span>
                         </div>
                     </div>
-                    <div className="flex flex-col gap-2">
-                        <label className="text-sm font-medium text-gray-700">Total Amount Color</label>
-                        <div className="flex gap-2 items-center">
+                    <div className="color-setting-card">
+                        <label className="color-setting-label">Total Amount Color</label>
+                        <div className="color-setting-control">
                             <input
                                 type="color"
                                 name="totalAmountColor"
                                 value={invoiceData.totalAmountColor || '#2563eb'}
                                 onChange={handleChange}
-                                className="h-10 w-16 p-1 border border-gray-300 rounded-md cursor-pointer"
+                                className="color-setting-input"
                             />
-                            <span className="text-sm text-gray-500 font-mono">{invoiceData.totalAmountColor || '#2563eb'}</span>
+                            <span className="color-setting-hex">{invoiceData.totalAmountColor || '#2563eb'}</span>
                         </div>
                     </div>
                 </div>
@@ -158,187 +177,309 @@ export default function InvoiceEditor({
                 </div>
             </div>
 
-            <div className="section mb-8">
-                <h3 className="text-lg mb-4 font-semibold text-muted">Field Visibility</h3>
-                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                    {invoiceData.visibleFields && Object.keys(invoiceData.visibleFields).map(field => (
-                        <div key={field} className="flex items-center gap-2 bg-slate-50 p-2 rounded-md border border-slate-200">
-                            <input
-                                type="checkbox"
-                                checked={invoiceData.visibleFields[field]}
-                                onChange={(e) => setInvoiceData(prev => ({
-                                    ...prev,
-                                    visibleFields: {
-                                        ...prev.visibleFields,
-                                        [field]: e.target.checked
-                                    }
-                                }))}
-                                className="w-4 h-4 cursor-pointer text-primary rounded"
-                            />
-                            <span className="text-xs sm:text-sm text-gray-700 capitalize">{field.replace(/([A-Z])/g, ' $1').trim()}</span>
+            {/* Modern Compact Field Visibility Selector */}
+            <div className="visibility-section">
+                <div 
+                    className="visibility-header" 
+                    onClick={() => setIsVisibilityOpen(!isVisibilityOpen)}
+                    role="button"
+                    tabIndex={0}
+                >
+                    <div className="visibility-header-left">
+                        <Eye size={16} className="text-primary" />
+                        <span className="font-semibold text-sm text-slate-700">Field Visibility</span>
+                        <span className="visibility-count-badge">
+                            {Object.values(invoiceData.visibleFields || {}).filter(Boolean).length}/
+                            {Object.keys(invoiceData.visibleFields || {}).length} Visible
+                        </span>
+                    </div>
+                    <button
+                        type="button"
+                        className="visibility-toggle-btn"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setIsVisibilityOpen(!isVisibilityOpen);
+                        }}
+                    >
+                        <span>{isVisibilityOpen ? 'Done' : 'Customize'}</span>
+                        {isVisibilityOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                    </button>
+                </div>
+
+                {isVisibilityOpen && (
+                    <div className="visibility-chips-wrapper">
+                        <div className="visibility-chips-grid">
+                            {invoiceData.visibleFields && Object.keys(invoiceData.visibleFields).map(field => {
+                                const isVisible = invoiceData.visibleFields[field];
+                                const label = FIELD_LABELS[field] || field.replace(/([A-Z])/g, ' $1').trim();
+                                return (
+                                    <button
+                                        key={field}
+                                        type="button"
+                                        onClick={() => setInvoiceData(prev => ({
+                                            ...prev,
+                                            visibleFields: {
+                                                ...prev.visibleFields,
+                                                [field]: !isVisible
+                                            }
+                                        }))}
+                                        className={`visibility-chip ${isVisible ? 'active' : 'inactive'}`}
+                                        title={isVisible ? `Click to hide ${label}` : `Click to show ${label}`}
+                                    >
+                                        {isVisible ? <Check size={12} /> : <EyeOff size={12} />}
+                                        <span>{label}</span>
+                                    </button>
+                                );
+                            })}
                         </div>
-                    ))}
-                </div>
-            </div>
-
-            <div className="section mb-8">
-                <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-semibold text-muted">Company Details</h3>
-                    {companyMode === 'fixed' ? (
-                        <span className="badge badge-success text-xs">
-                            <Pin size={12} /> Fixed Company Active
-                        </span>
-                    ) : (
-                        <span className="badge badge-info text-xs">
-                            <PenLine size={12} /> Fill Every Time Active
-                        </span>
-                    )}
-                </div>
-
-                {/* Company Mode Selector Card */}
-                <div className="company-mode-card">
-                    <div className="company-mode-header">
-                        <span className="text-xs font-bold uppercase tracking-wider text-muted">
-                            Company Setup Option
-                        </span>
-                        {companyMode === 'fixed' && (
+                        <div className="visibility-actions-row">
                             <button
                                 type="button"
-                                onClick={() => setIsCompanyLocked(!isCompanyLocked)}
-                                className="btn btn-outline text-xs py-1 px-2.5 flex items-center gap-1.5"
-                                title={isCompanyLocked ? "Unlock to edit company fields" : "Lock fields to prevent accidental edits"}
+                                onClick={() => {
+                                    const allTrue = {};
+                                    Object.keys(invoiceData.visibleFields || {}).forEach(k => allTrue[k] = true);
+                                    setInvoiceData(prev => ({ ...prev, visibleFields: allTrue }));
+                                }}
+                                className="visibility-action-link"
                             >
-                                {isCompanyLocked ? <Lock size={13} className="text-amber-600" /> : <Unlock size={13} className="text-slate-500" />}
-                                {isCompanyLocked ? 'Locked (Click to edit)' : 'Lock Details'}
+                                Show All Fields
                             </button>
-                        )}
-                    </div>
-
-                    <div className="company-mode-tabs">
-                        <button
-                            type="button"
-                            className={`company-mode-tab ${companyMode === 'fixed' ? 'active' : ''}`}
-                            onClick={() => onModeChange('fixed')}
-                        >
-                            <Pin size={15} /> Fixed Company Name
-                        </button>
-                        <button
-                            type="button"
-                            className={`company-mode-tab ${companyMode === 'manual' ? 'active' : ''}`}
-                            onClick={() => onModeChange('manual')}
-                        >
-                            <PenLine size={15} /> Fill Every Time
-                        </button>
-                    </div>
-
-                    {companyMode === 'fixed' ? (
-                        <div className="company-mode-body">
-                            <p className="company-mode-description">
-                                📌 <strong>Fixed Mode:</strong> Company name & details are saved permanently. New invoices automatically retain this company information.
-                            </p>
-                            <div className="company-mode-actions">
-                                <button
-                                    type="button"
-                                    onClick={onSaveFixedCompany}
-                                    className="btn btn-primary text-xs py-1.5 px-3 flex items-center gap-1.5"
-                                >
-                                    <Save size={14} /> Save as Fixed Default
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={onRestoreFixedCompany}
-                                    className="btn btn-outline text-xs py-1.5 px-3 flex items-center gap-1.5"
-                                    title="Reload saved default company info"
-                                >
-                                    <RotateCcw size={14} /> Restore Saved
-                                </button>
-                            </div>
                         </div>
-                    ) : (
-                        <div className="company-mode-body">
-                            <p className="company-mode-description">
-                                ✍️ <strong>Fill Every Time:</strong> You fill company details fresh for every invoice. Starting a new invoice will clear company fields for manual entry.
-                            </p>
-                            <div className="company-mode-actions">
-                                <button
-                                    type="button"
-                                    onClick={onClearCompany}
-                                    className="btn btn-outline text-xs py-1.5 px-3 flex items-center gap-1.5 text-danger"
-                                >
-                                    <RotateCcw size={14} /> Clear Company Fields
-                                </button>
-                            </div>
-                        </div>
-                    )}
-                </div>
-
-                {isCompanyLocked && companyMode === 'fixed' && (
-                    <div className="mb-3 p-2 bg-amber-50 border border-amber-200 rounded-md text-xs text-amber-800 flex items-center justify-between">
-                        <span className="flex items-center gap-1.5">
-                            <Lock size={13} /> Company details are locked. Click Unlock to make changes.
-                        </span>
-                        <button
-                            type="button"
-                            onClick={() => setIsCompanyLocked(false)}
-                            className="font-semibold underline hover:text-amber-900 cursor-pointer"
-                        >
-                            Unlock
-                        </button>
                     </div>
                 )}
+            </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <Input 
-                        label="Company Name" 
-                        name="companyName" 
-                        value={invoiceData.companyName || ''} 
-                        onChange={handleChange} 
-                        placeholder="Your Company Name" 
-                        disabled={companyMode === 'fixed' && isCompanyLocked}
-                    />
-                    <Input 
-                        label="Tagline / Description" 
-                        name="companyDescription" 
-                        value={invoiceData.companyDescription || ''} 
-                        onChange={handleChange} 
-                        placeholder="e.g. Software Services" 
-                        disabled={companyMode === 'fixed' && isCompanyLocked}
-                    />
-                    <Input 
-                        label="Your Name" 
-                        name="yourName" 
-                        value={invoiceData.yourName || ''} 
-                        onChange={handleChange} 
-                        placeholder="John Doe" 
-                        disabled={companyMode === 'fixed' && isCompanyLocked}
-                    />
-                    <Input 
-                        label="Address" 
-                        name="companyAddress" 
-                        value={invoiceData.companyAddress || ''} 
-                        onChange={handleChange} 
-                        placeholder="123 Street" 
-                        disabled={companyMode === 'fixed' && isCompanyLocked}
-                    />
-                    <Input 
-                        label="Email" 
-                        name="companyEmail" 
-                        value={invoiceData.companyEmail || ''} 
-                        onChange={handleChange} 
-                        placeholder="you@example.com" 
-                        disabled={companyMode === 'fixed' && isCompanyLocked}
-                    />
+            {/* Collapsible Company Details Section */}
+            <div className="company-accordion-wrapper mb-8">
+                <div 
+                    className="company-accordion-header"
+                    onClick={() => setIsCompanyOpen(!isCompanyOpen)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            setIsCompanyOpen(!isCompanyOpen);
+                        }
+                    }}
+                >
+                    <div className="company-accordion-header-left">
+                        <div className="company-accordion-icon">
+                            <Building2 size={18} />
+                        </div>
+                        <div className="company-accordion-titles">
+                            <div className="flex items-center gap-2">
+                                <span className="company-accordion-title">Company Details</span>
+                                {companyMode === 'fixed' ? (
+                                    <span className="badge badge-success text-[11px] py-0.5 px-2">
+                                        <Pin size={10} /> Fixed Active
+                                    </span>
+                                ) : (
+                                    <span className="badge badge-info text-[11px] py-0.5 px-2">
+                                        <PenLine size={10} /> Fill Every Time
+                                    </span>
+                                )}
+                            </div>
+                            <p className="company-accordion-subtitle">
+                                {invoiceData.companyName ? (
+                                    <>
+                                        <strong className="text-slate-700">{invoiceData.companyName}</strong>
+                                        {(invoiceData.contactNumber || invoiceData.yourName) && (
+                                            <span className="text-slate-500"> • {invoiceData.contactNumber || invoiceData.yourName}</span>
+                                        )}
+                                    </>
+                                ) : (
+                                    <span className="text-slate-400 italic">Click down arrow to enter company details</span>
+                                )}
+                            </p>
+                        </div>
+                    </div>
+
+                    <button 
+                        type="button" 
+                        className="company-accordion-toggle-btn"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setIsCompanyOpen(!isCompanyOpen);
+                        }}
+                    >
+                        <span className="hidden sm:inline">{isCompanyOpen ? 'Hide' : 'Show / Edit'}</span>
+                        {isCompanyOpen ? (
+                            <ChevronUp size={16} />
+                        ) : (
+                            <ChevronDown size={16} className="text-primary font-bold" />
+                        )}
+                    </button>
                 </div>
+
+                {isCompanyOpen && (
+                    <div className="company-accordion-body">
+                        {/* Company Mode Selector Card */}
+                        <div className="company-mode-card">
+                            <div className="company-mode-header">
+                                <span className="text-xs font-bold uppercase tracking-wider text-muted">
+                                    Company Setup Option
+                                </span>
+                                {companyMode === 'fixed' && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsCompanyLocked(!isCompanyLocked)}
+                                        className="btn btn-outline text-xs py-1 px-2.5 flex items-center gap-1.5"
+                                        title={isCompanyLocked ? "Unlock to edit company fields" : "Lock fields to prevent accidental edits"}
+                                    >
+                                        {isCompanyLocked ? <Lock size={13} className="text-amber-600" /> : <Unlock size={13} className="text-slate-500" />}
+                                        {isCompanyLocked ? 'Locked (Click to edit)' : 'Lock Details'}
+                                    </button>
+                                )}
+                            </div>
+
+                            <div className="company-mode-tabs">
+                                <button
+                                    type="button"
+                                    className={`company-mode-tab ${companyMode === 'fixed' ? 'active' : ''}`}
+                                    onClick={() => onModeChange('fixed')}
+                                >
+                                    <Pin size={15} /> Fixed Company Name
+                                </button>
+                                <button
+                                    type="button"
+                                    className={`company-mode-tab ${companyMode === 'manual' ? 'active' : ''}`}
+                                    onClick={() => onModeChange('manual')}
+                                >
+                                    <PenLine size={15} /> Fill Every Time
+                                </button>
+                            </div>
+
+                            {companyMode === 'fixed' ? (
+                                <div className="company-mode-body">
+                                    <p className="company-mode-description">
+                                        📌 <strong>Fixed Mode:</strong> Company name & details are saved permanently. New invoices automatically retain this company information.
+                                    </p>
+                                    <div className="company-mode-actions">
+                                        <button
+                                            type="button"
+                                            onClick={onSaveFixedCompany}
+                                            className="btn btn-primary text-xs py-1.5 px-3 flex items-center gap-1.5"
+                                        >
+                                            <Save size={14} /> Save as Fixed Default
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={onRestoreFixedCompany}
+                                            className="btn btn-outline text-xs py-1.5 px-3 flex items-center gap-1.5"
+                                            title="Reload saved default company info"
+                                        >
+                                            <RotateCcw size={14} /> Restore Saved
+                                        </button>
+                                        {onOpenProfileSettings && (
+                                            <button
+                                                type="button"
+                                                onClick={onOpenProfileSettings}
+                                                className="btn btn-outline text-xs py-1.5 px-3 flex items-center gap-1.5"
+                                                title="Manage company profile saved to your account"
+                                            >
+                                                <Building2 size={14} /> Cloud Settings
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="company-mode-body">
+                                    <p className="company-mode-description">
+                                        ✍️ <strong>Fill Every Time:</strong> You fill company details fresh for every invoice. Starting a new invoice will clear company fields for manual entry.
+                                    </p>
+                                    <div className="company-mode-actions">
+                                        <button
+                                            type="button"
+                                            onClick={onClearCompany}
+                                            className="btn btn-outline text-xs py-1.5 px-3 flex items-center gap-1.5 text-danger"
+                                        >
+                                            <RotateCcw size={14} /> Clear Company Fields
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {isCompanyLocked && companyMode === 'fixed' && (
+                            <div className="mb-3 p-2 bg-amber-50 border border-amber-200 rounded-md text-xs text-amber-800 flex items-center justify-between">
+                                <span className="flex items-center gap-1.5">
+                                    <Lock size={13} /> Company details are locked. Click Unlock to make changes.
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsCompanyLocked(false)}
+                                    className="font-semibold underline hover:text-amber-900 cursor-pointer"
+                                >
+                                    Unlock
+                                </button>
+                            </div>
+                        )}
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <Input 
+                                label="Company Name" 
+                                name="companyName" 
+                                value={invoiceData.companyName || ''} 
+                                onChange={handleChange} 
+                                placeholder="Your Company Name" 
+                                disabled={companyMode === 'fixed' && isCompanyLocked}
+                            />
+                            <Input 
+                                label="Tagline / Description" 
+                                name="companyDescription" 
+                                value={invoiceData.companyDescription || ''} 
+                                onChange={handleChange} 
+                                placeholder="e.g. Software Services" 
+                                disabled={companyMode === 'fixed' && isCompanyLocked}
+                            />
+                            <Input 
+                                label="Contact Number" 
+                                name="contactNumber" 
+                                type="text"
+                                value={invoiceData.contactNumber ?? invoiceData.yourName ?? ''} 
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    setInvoiceData(prev => ({ ...prev, contactNumber: val, yourName: val }));
+                                }} 
+                                placeholder="e.g. +1 (555) 019-2834" 
+                                disabled={companyMode === 'fixed' && isCompanyLocked}
+                            />
+                            <Input 
+                                label="Address" 
+                                name="companyAddress" 
+                                value={invoiceData.companyAddress || ''} 
+                                onChange={handleChange} 
+                                placeholder="123 Street" 
+                                disabled={companyMode === 'fixed' && isCompanyLocked}
+                            />
+                            <Input 
+                                label="Email" 
+                                name="companyEmail" 
+                                type="email"
+                                value={invoiceData.companyEmail || ''} 
+                                onChange={handleChange} 
+                                placeholder="you@example.com" 
+                                disabled={companyMode === 'fixed' && isCompanyLocked}
+                            />
+                        </div>
+                    </div>
+                )}
             </div>
 
             <div className="section mb-8">
                 <h3 className="text-lg mb-4 font-semibold text-muted">Client Details</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                     <Input label="Client Name" name="clientName" value={invoiceData.clientName} onChange={handleChange} placeholder="Client Company" />
                     <Input label="Client Description" name="clientDescription" value={invoiceData.clientDescription || ''} onChange={handleChange} placeholder="e.g. Design Agency" />
+                </div>
+                <div className="mb-4">
                     <Input label="Client Address" name="clientAddress" value={invoiceData.clientAddress} onChange={handleChange} placeholder="456 Avenue" />
-                    <Input label="Invoice Date" name="date" type="date" value={invoiceData.date} onChange={handleChange} />
-                    <Input label="Due Date" name="dueDate" type="date" value={invoiceData.dueDate} onChange={handleChange} />
+                </div>
+                {/* Invoice Date and Due Date side-by-side on one single line */}
+                <div className="grid grid-cols-2 gap-4">
+                    <Input label="Invoice Date" name="date" type="date" value={invoiceData.date} onChange={handleChange} className="date-input-compact" />
+                    <Input label="Due Date" name="dueDate" type="date" value={invoiceData.dueDate} onChange={handleChange} className="date-input-compact" />
                 </div>
             </div>
 

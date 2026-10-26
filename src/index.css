@@ -203,12 +203,32 @@ label {
   display: grid;
 }
 
+.gap-1 {
+  gap: 0.25rem;
+}
+
+.gap-1\.5 {
+  gap: 0.375rem;
+}
+
 .gap-2 {
   gap: 0.5rem;
 }
 
+.gap-2\.5 {
+  gap: 0.625rem;
+}
+
+.gap-3 {
+  gap: 0.75rem;
+}
+
 .gap-4 {
   gap: 1rem;
+}
+
+.gap-5 {
+  gap: 1.25rem;
 }
 
 .gap-6 {
@@ -445,6 +465,31 @@ label {
 .relative {
   position: relative;
 }
+
+/* Color input & size utilities */
+input[type="color"] {
+  -webkit-appearance: none;
+  appearance: none;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.5rem;
+  width: 48px;
+  min-width: 48px;
+  height: 38px;
+  padding: 2px;
+  cursor: pointer;
+  background-color: #ffffff;
+  flex-shrink: 0;
+}
+input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+input[type="color"]::-webkit-color-swatch {
+  border: none;
+  border-radius: 0.35rem;
+}
+.w-16 { width: 4rem; }
+.w-24 { width: 6rem; }
+.h-10 { height: 2.5rem; }
 
 /* Grid System */
 .grid-cols-1 {
