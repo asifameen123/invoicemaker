@@ -74,12 +74,14 @@ export default function InvoiceHistoryModal({
 
   const filteredInvoices = useMemo(() => {
     return invoices.filter(inv => {
-      const matchesSearch = 
-        (inv.invoice_number || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (inv.client_name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (inv.company_name || '').toLowerCase().includes(searchQuery.toLowerCase());
+      const q = searchQuery.toLowerCase().trim();
+      const matchesSearch = !q ||
+        (inv.invoice_number || '').toLowerCase().includes(q) ||
+        (inv.client_name || '').toLowerCase().includes(q) ||
+        (inv.company_name || '').toLowerCase().includes(q);
       
-      const matchesStatus = statusFilter === 'all' || inv.status === statusFilter;
+      const invStatus = (inv.status || 'draft').toLowerCase();
+      const matchesStatus = statusFilter === 'all' || invStatus === statusFilter.toLowerCase();
       return matchesSearch && matchesStatus;
     });
   }, [invoices, searchQuery, statusFilter]);
@@ -333,7 +335,7 @@ export default function InvoiceHistoryModal({
           ) : (
             <div className="history-table-wrapper">
               {/* Desktop Table View */}
-              <table className="history-table hidden sm:table">
+              <table className="history-table">
                 <thead>
                   <tr>
                     <th>Invoice #</th>
@@ -416,7 +418,7 @@ export default function InvoiceHistoryModal({
               </table>
 
               {/* Mobile Cards View */}
-              <div className="history-mobile-cards sm:hidden">
+              <div className="history-mobile-cards">
                 {filteredInvoices.map((inv) => {
                   const isCurrent = currentInvoiceId === inv.id;
                   return (

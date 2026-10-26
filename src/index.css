@@ -565,6 +565,15 @@ input[type="color"]::-webkit-color-swatch {
   .sm\:flex {
     display: flex !important;
   }
+  .sm\:table {
+    display: table !important;
+  }
+  .sm\:inline {
+    display: inline !important;
+  }
+  .sm\:block {
+    display: block !important;
+  }
 }
 
 @media (min-width: 1024px) {

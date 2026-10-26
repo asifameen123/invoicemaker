@@ -1143,6 +1143,7 @@
 }
 
 .history-table {
+  display: table;
   width: 100%;
   border-collapse: collapse;
   text-align: left;
@@ -1331,7 +1332,7 @@
 
 /* Mobile Invoices History Cards */
 .history-mobile-cards {
-  display: flex;
+  display: none;
   flex-direction: column;
   gap: 0.75rem;
   padding: 0.5rem 0.25rem;
@@ -1391,6 +1392,15 @@
 }
 
 @media (max-width: 640px) {
+  /* Invoices History Modal Responsive Toggle */
+  .history-table {
+    display: none !important;
+  }
+
+  .history-mobile-cards {
+    display: flex !important;
+  }
+
   /* Top Bar */
   .header-top-row {
     flex-direction: column;
