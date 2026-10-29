@@ -201,19 +201,24 @@ export default function InvoicePreview({ invoiceData, previewRef, onDownloadPng,
 
                 {/* Client & Date Info */}
                 <div className="flex justify-between mb-12">
-                    <div>
-                        <h3 className="text-gray-500 font-medium mb-1">Bill To:</h3>
+                    <div className="invoice-bill-to">
+                        <h3 className="invoice-bill-to-title text-gray-500 font-medium mb-1">Bill To:</h3>
                         {invoiceData.visibleFields?.clientName !== false && (
-                            <h4 className="text-lg font-bold text-slate-800">{invoiceData.clientName || 'Client Name'}</h4>
+                            <h4 
+                                className="invoice-client-name text-lg font-bold text-slate-800 whitespace-nowrap"
+                                title={invoiceData.clientName || 'Client Name'}
+                            >
+                                {(invoiceData.clientName || 'Client Name').replace(/[\r\n]+/g, ' ')}
+                            </h4>
                         )}
                         {invoiceData.visibleFields?.clientDescription !== false && invoiceData.clientDescription && (
-                            <p className="text-sm text-slate-500 italic mb-1">{invoiceData.clientDescription}</p>
+                            <p className="invoice-client-desc text-sm text-slate-500 italic mb-1">{invoiceData.clientDescription}</p>
                         )}
                         {invoiceData.visibleFields?.clientAddress !== false && (
-                            <div className="text-gray-500 whitespace-pre-line">{invoiceData.clientAddress || 'Client Address'}</div>
+                            <div className="invoice-client-address text-gray-500 whitespace-pre-line">{invoiceData.clientAddress || 'Client Address'}</div>
                         )}
                     </div>
-                    <div className="text-right">
+                    <div className="invoice-meta-dates text-right flex-shrink-0">
                         {invoiceData.visibleFields?.date !== false && (
                             <div className="mb-2">
                                 <span className="text-gray-500 font-medium">Date: </span>

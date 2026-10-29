@@ -38,7 +38,10 @@ export default function InvoiceEditor({
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setInvoiceData(prev => ({ ...prev, [name]: value }));
+        const cleanedValue = (name === 'clientName' || name === 'invoiceNumber') 
+            ? value.replace(/[\r\n]+/g, ' ') 
+            : value;
+        setInvoiceData(prev => ({ ...prev, [name]: cleanedValue }));
     };
 
     const formatCurrency = (amount) => {

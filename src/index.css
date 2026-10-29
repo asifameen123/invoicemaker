@@ -602,8 +602,77 @@ input[type="color"]::-webkit-color-swatch {
   white-space: pre-line;
 }
 
+.whitespace-nowrap {
+  white-space: nowrap !important;
+}
+
+.flex-1 {
+  flex: 1 1 0%;
+}
+
+.flex-shrink-0 {
+  flex-shrink: 0;
+}
+
 .max-w-xs {
   max-width: 20rem;
+}
+
+/* Color utilities used in components */
+.text-slate-800 { color: #1e293b; }
+.text-slate-700 { color: #334155; }
+.text-slate-600 { color: #475569; }
+.text-slate-500 { color: #64748b; }
+.text-slate-400 { color: #94a3b8; }
+.text-gray-500 { color: #6b7280; }
+.text-gray-400 { color: #9ca3af; }
+.text-gray-300 { color: #d1d5db; }
+
+/* Bill To & Client Details on Invoice Page */
+.invoice-bill-to {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 65%;
+}
+
+.invoice-bill-to-title {
+  color: #6b7280;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+}
+
+.invoice-client-name {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1.35;
+  margin-bottom: 0.25rem;
+  white-space: nowrap !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+.invoice-client-desc {
+  font-size: 0.875rem;
+  color: #64748b;
+  font-style: italic;
+  margin-bottom: 0.25rem;
+  line-height: 1.35;
+}
+
+.invoice-client-address {
+  color: #6b7280;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  white-space: pre-line;
+  word-break: break-word;
+}
+
+.invoice-meta-dates {
+  text-align: right;
+  flex-shrink: 0;
 }
 
 /* Preview Toolbar & Page Styling */
